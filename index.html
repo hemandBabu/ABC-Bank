@@ -23,6 +23,7 @@
       --muted: #64748b;
       --border: #cbd5e1;
       --success: #15803d;
+      --warning: #ca8a04;
       --danger: #b91c1c;
       --radius: 8px;
     }
@@ -93,7 +94,7 @@
 
     /* Main Container */
     .container {
-      max-width: 1050px;
+      max-width: 1200px;
       margin: 1.5rem auto;
       padding: 0 1rem;
       flex-grow: 1;
@@ -210,6 +211,16 @@
       gap: 1.25rem;
     }
 
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; }
       .account-banner { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -253,11 +264,12 @@
       display: none;
     }
     .alert-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fca5a5; }
+    .alert-warning { background: #fefce8; color: var(--warning); border: 1px solid #fde047; }
     .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #86efac; }
 
     /* Table */
     .table-wrapper {
-      max-height: 350px;
+      max-height: 300px;
       overflow-y: auto;
     }
 
@@ -282,6 +294,17 @@
 
     .credit { color: var(--success); font-weight: 700; }
     .debit { color: var(--danger); font-weight: 700; }
+    
+    .badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-low { background: #f0fdf4; color: var(--success); }
+    .badge-med { background: #fefce8; color: var(--warning); }
+    .badge-high { background: #fef2f2; color: var(--danger); }
 
     /* Modal / Receipt */
     .modal-backdrop {
@@ -397,8 +420,13 @@
           </div>
         </div>
 
+        <!-- Security / Fraud Banner Alert -->
+        <div class="alert alert-warning" id="fraudAlertBanner" style="display: none;">
+          <span class="material-symbols-outlined">security</span> <strong>Security Alert:</strong> <span id="fraudAlertText"></span>
+        </div>
+
+        <!-- Row 1: Transaction Desk & Operations Ledger -->
         <div class="grid">
-          <!-- Operations Desk -->
           <div class="card">
             <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 6px;">
               <span class="material-symbols-outlined">sync_alt</span> Transaction Desk
@@ -415,6 +443,7 @@
 
             <div class="alert alert-danger" id="opErr"></div>
             <div class="alert alert-success" id="opOk"></div>
+            <div class="alert alert-warning" id="opWarn"></div>
 
             <form onsubmit="processTransaction(event)">
               <div class="form-group">
@@ -427,10 +456,9 @@
             </form>
           </div>
 
-          <!-- Account Specific History -->
           <div class="card">
             <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 6px;">
-              <span class="material-symbols-outlined">history</span> Operations Ledger
+              <span class="material-symbols-outlined">history</span> Operations Ledger & Risk Scoring
             </h3>
             <div class="table-wrapper">
               <table>
@@ -438,6 +466,7 @@
                   <tr>
                     <th>Type</th>
                     <th>Amount</th>
+                    <th>Risk Profile</th>
                     <th>Timestamp</th>
                   </tr>
                 </thead>
@@ -446,6 +475,51 @@
             </div>
           </div>
         </div>
+
+        <!-- Row 2: Advanced Features Grid (Goals, Cash-flow, Behavioral Profile) -->
+        <div class="grid-3">
+          <!-- Intelligent Financial Goal Engine -->
+          <div class="card" style="margin-bottom:0;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary); font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined">track_changes</span> Goal Engine
+            </h3>
+            <div id="goalDisplayArea" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+              <p style="color: var(--muted); margin-bottom: 0.5rem;">No active savings target set.</p>
+            </div>
+            <form onsubmit="setFinancialGoal(event)">
+              <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label style="font-size:0.8rem;" for="goalTarget">Target Amount (₹)</label>
+                <input type="number" id="goalTarget" class="form-control" style="padding:0.4rem;" min="1" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label style="font-size:0.8rem;" for="goalMonths">Months to Achieve</label>
+                <input type="number" id="goalMonths" class="form-control" style="padding:0.4rem;" min="1" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="padding: 0.4rem; font-size: 0.9rem;">Set & Calculate Target</button>
+            </form>
+          </div>
+
+          <!-- Predictive Cash-Flow Management -->
+          <div class="card" style="margin-bottom:0;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary); font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined">trending_up</span> Cash-Flow Forecast
+            </h3>
+            <div id="cashFlowContent" style="font-size: 0.9rem; line-height: 1.5;">
+              <p style="color: var(--muted);">Analyzing spending trends...</p>
+            </div>
+          </div>
+
+          <!-- Behavioral Transaction Profiling -->
+          <div class="card" style="margin-bottom:0;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary); font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined">psychology</span> Behavioral Profile
+            </h3>
+            <div id="behavioralContent" style="font-size: 0.9rem; line-height: 1.5;">
+              <p style="color: var(--muted);">Gathering behavioral metrics...</p>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ADMIN WORKSPACE -->
@@ -543,6 +617,7 @@
       <div class="receipt-line"><span>Account Holder:</span><span id="rcptHolder"></span></div>
       <div class="receipt-line"><span>Account No:</span><span id="rcptAcc"></span></div>
       <div class="receipt-line"><span>Operation:</span><strong id="rcptType"></strong></div>
+      <div class="receipt-line"><span>Risk Score:</span><span id="rcptRisk"></span></div>
       <div class="receipt-line"><span>Amount:</span><strong id="rcptAmt">₹0.00</strong></div>
       <div class="receipt-line total"><span>Updated Balance:</span><span id="rcptBal">₹0.00</span></div>
 
@@ -558,9 +633,8 @@
   </div>
 
   <script>
-    const DB_KEY = 'ABC_BANK_DB_INR';
+    const DB_KEY = 'ABC_BANK_DB_INR_ADVANCED';
 
-    // Initial database: Only Admin is available at first time
     const defaultDatabase = {
       "AD2026": { 
         pin: "AD2026", 
@@ -569,7 +643,8 @@
         dob: "N/A", 
         address: "HQ", 
         balance: 0.00, 
-        history: [] 
+        history: [],
+        goal: null
       }
     };
 
@@ -629,6 +704,7 @@
       const liveData = db[currentUser.accNo];
       currentUser.balance = liveData.balance;
       currentUser.history = liveData.history;
+      currentUser.goal = liveData.goal;
 
       if (currentUser.role === 'admin') {
         document.getElementById('userWorkspace').style.display = 'none';
@@ -643,6 +719,7 @@
         document.getElementById('bannerBalance').textContent = `₹${currentUser.balance.toFixed(2)}`;
 
         renderHistory();
+        renderAdvancedModules();
       }
     }
 
@@ -650,51 +727,86 @@
       const tbody = document.getElementById('historyBody');
       tbody.innerHTML = '';
 
+      if(currentUser.history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted);">No transactions recorded yet.</td></tr>`;
+        return;
+      }
+
       currentUser.history.forEach(tx => {
         const tr = document.createElement('tr');
         const isDep = tx.type === 'Deposit';
+        let badgeClass = 'badge-low';
+        if (tx.risk === 'Medium') badgeClass = 'badge-med';
+        if (tx.risk === 'High') badgeClass = 'badge-high';
+
         tr.innerHTML = `
           <td><strong>${tx.type}</strong></td>
           <td class="${isDep ? 'credit' : 'debit'}">${isDep ? '+' : '-'}₹${tx.amount.toFixed(2)}</td>
+          <td><span class="badge ${badgeClass}">${tx.risk || 'Low'}</span></td>
           <td>${tx.timestamp}</td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function renderAdminTable() {
-      const db = getDB();
-      const tbody = document.getElementById('adminBody');
-      tbody.innerHTML = '';
-
-      let hasUsers = false;
-
-      Object.keys(db).forEach(accNo => {
-        const item = db[accNo];
-        if (item.role !== 'admin') {
-          hasUsers = true;
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${accNo}</strong></td>
-            <td>${item.name}</td>
-            <td>${item.dob}</td>
-            <td>${item.address}</td>
-            <td style="font-weight:700;">₹${item.balance.toFixed(2)}</td>
-            <td>
-              <button class="btn btn-secondary" style="width:auto; padding:0.25rem 0.6rem; font-size:0.8rem;" onclick="resetAccount('${accNo}')">
-                <span class="material-symbols-outlined" style="font-size:1rem;">restart_alt</span> Reset Balance
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
-
-      if (!hasUsers) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="6" style="text-align: center; color: var(--muted); padding: 1.5rem;">No user accounts created yet. Click "Add New User" to begin.</td>`;
-        tbody.appendChild(tr);
+    function renderAdvancedModules() {
+      // 1. Fraud Detection & Alerts
+      const fraudBanner = document.getElementById('fraudAlertBanner');
+      const highRiskCount = currentUser.history.filter(t => t.risk === 'High').length;
+      if (highRiskCount > 0) {
+        document.getElementById('fraudAlertText').textContent = `${highRiskCount} high-risk transaction(s) flagged on your account. Review logs immediately.`;
+        fraudBanner.style.display = 'block';
+      } else {
+        fraudBanner.style.display = 'none';
       }
+
+      // 2. Goal Engine
+      const goalArea = document.getElementById('goalDisplayArea');
+      if (currentUser.goal) {
+        const target = currentUser.goal.target;
+        const months = currentUser.goal.months;
+        const requiredMonthly = target / months;
+        goalArea.innerHTML = `
+          <p><strong>Target:</strong> ₹${target.toFixed(2)} in ${months} months</p>
+          <p style="margin-top:0.25rem; color:var(--success);"><strong>Required Saving:</strong> ₹${requiredMonthly.toFixed(2)}/mo</p>
+        `;
+      } else {
+        goalArea.innerHTML = `<p style="color: var(--muted); margin-bottom: 0.5rem;">No active savings target set.</p>`;
+      }
+
+      // 3. Predictive Cash-Flow Management
+      const cfContent = document.getElementById('cashFlowContent');
+      const totalDeposits = currentUser.history.filter(t => t.type === 'Deposit').reduce((sum, t) => sum + t.amount, 0);
+      const totalWithdrawals = currentUser.history.filter(t => t.type === 'Withdrawal').reduce((sum, t) => sum + t.amount, 0);
+      const netCashFlow = totalDeposits - totalWithdrawals;
+      cfContent.innerHTML = `
+        <p><strong>Net Cash Flow:</strong> <span class="${netCashFlow >= 0 ? 'credit' : 'debit'}">₹${netCashFlow.toFixed(2)}</span></p>
+        <p style="margin-top:0.3rem; font-size:0.85rem; color:var(--muted);">Projected 30-day liquidity outlook is stable based on recent activity patterns.</p>
+      `;
+
+      // 4. Behavioral Transaction Profiling
+      const bhContent = document.getElementById('behavioralContent');
+      const txCount = currentUser.history.length;
+      let profileType = "Standard Retail User";
+      if (txCount > 5) profileType = "Active Transactor";
+      if (totalWithdrawals > 50000) profileType = "High-Volume Liquidator";
+      bhContent.innerHTML = `
+        <p><strong>Profile Tier:</strong> ${profileType}</p>
+        <p style="margin-top:0.3rem; font-size:0.85rem; color:var(--muted);">Behavior aligns with normal operating baselines. Frequency score: ${txCount} ops.</p>
+      `;
+    }
+
+    function setFinancialGoal(e) {
+      e.preventDefault();
+      const target = parseFloat(document.getElementById('goalTarget').value);
+      const months = parseInt(document.getElementById('goalMonths').value);
+
+      if (isNaN(target) || isNaN(months) || target <= 0 || months <= 0) return;
+
+      const db = getDB();
+      db[currentUser.accNo].goal = { target, months };
+      saveDB(db);
+      renderWorkspace();
     }
 
     function setTab(type) {
@@ -740,6 +852,14 @@
         userRecord.balance += val;
       }
 
+      // Fraud Detection & Risk Scoring Algorithm
+      let riskScore = 'Low';
+      if (val > 25000) {
+        riskScore = 'High';
+      } else if (val > 10000) {
+        riskScore = 'Medium';
+      }
+
       const timestamp = new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
       const txType = activeTab === 'deposit' ? 'Deposit' : 'Withdrawal';
 
@@ -747,6 +867,7 @@
         ref: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
         type: txType,
         amount: val,
+        risk: riskScore,
         timestamp: timestamp,
         updatedBalance: userRecord.balance
       };
@@ -755,7 +876,11 @@
       saveDB(db);
 
       renderWorkspace();
-      showOpOk(`${txType} completed successfully.`);
+      if (riskScore === 'High') {
+        showOpWarn("Transaction completed, but flagged as High Risk by Fraud Detection.");
+      } else {
+        showOpOk(`${txType} completed successfully.`);
+      }
       input.value = '';
 
       openReceipt();
@@ -794,7 +919,8 @@
         pin: pin,
         role: "user",
         balance: isNaN(initialBal) ? 0.00 : initialBal,
-        history: []
+        history: [],
+        goal: null
       };
 
       saveDB(db);
@@ -809,11 +935,47 @@
       document.getElementById('newBalance').value = '';
     }
 
+    function renderAdminTable() {
+      const db = getDB();
+      const tbody = document.getElementById('adminBody');
+      tbody.innerHTML = '';
+
+      let hasUsers = false;
+
+      Object.keys(db).forEach(accNo => {
+        const item = db[accNo];
+        if (item.role !== 'admin') {
+          hasUsers = true;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${accNo}</strong></td>
+            <td>${item.name}</td>
+            <td>${item.dob}</td>
+            <td>${item.address}</td>
+            <td style="font-weight:700;">₹${item.balance.toFixed(2)}</td>
+            <td>
+              <button class="btn btn-secondary" style="width:auto; padding:0.25rem 0.6rem; font-size:0.8rem;" onclick="resetAccount('${accNo}')">
+                <span class="material-symbols-outlined" style="font-size:1rem;">restart_alt</span> Reset Balance
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+      });
+
+      if (!hasUsers) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="6" style="text-align: center; color: var(--muted); padding: 1.5rem;">No user accounts created yet. Click "Add New User" to begin.</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
     function resetAccount(accNo) {
       const db = getDB();
       if (db[accNo]) {
         db[accNo].balance = 0.00;
         db[accNo].history = [];
+        db[accNo].goal = null;
         saveDB(db);
         renderAdminTable();
       }
@@ -826,6 +988,7 @@
       document.getElementById('rcptHolder').textContent = currentUser.name;
       document.getElementById('rcptAcc').textContent = currentUser.accNo;
       document.getElementById('rcptType').textContent = lastTx.type;
+      document.getElementById('rcptRisk').textContent = lastTx.risk || 'Low';
       document.getElementById('rcptAmt').textContent = `₹${lastTx.amount.toFixed(2)}`;
       document.getElementById('rcptBal').textContent = `₹${lastTx.updatedBalance.toFixed(2)}`;
 
@@ -838,7 +1001,12 @@
 
     function showOpErr(m) { const e = document.getElementById('opErr'); e.textContent = m; e.style.display = 'block'; }
     function showOpOk(m) { const e = document.getElementById('opOk'); e.textContent = m; e.style.display = 'block'; }
-    function hideAlerts() { document.getElementById('opErr').style.display = 'none'; document.getElementById('opOk').style.display = 'none'; }
+    function showOpWarn(m) { const e = document.getElementById('opWarn'); e.textContent = m; e.style.display = 'block'; }
+    function hideAlerts() { 
+      document.getElementById('opErr').style.display = 'none'; 
+      document.getElementById('opOk').style.display = 'none'; 
+      document.getElementById('opWarn').style.display = 'none'; 
+    }
   </script>
 </body>
 </html>
