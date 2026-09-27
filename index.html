@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Question Formatter</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Database-to-Quiz Helper</p>
+          <h1>Format and copy questions in seconds.</h1>
+          <p class="subhead">
+            Paste raw questions from your database export, choose the formatting you want,
+            and copy a clean question list ready for docs, LMS, or chat.
+          </p>
+        </div>
+        <div class="hero-card">
+          <h2>Quick actions</h2>
+          <button class="primary" id="formatBtn">Format questions</button>
+          <button class="ghost" id="copyBtn">Copy formatted questions</button>
+          <p class="status" id="statusText">Waiting for input…</p>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="panel">
+          <div class="panel-header">
+            <h3>Raw database questions</h3>
+            <span class="pill">Paste here</span>
+          </div>
+          <textarea
+            id="rawInput"
+            placeholder="Example:\nWhat is the capital of France?\nWho discovered penicillin?\n\nOr paste CSV/semicolon-separated questions."
+          ></textarea>
+          <div class="helper">
+            <span id="inputCount">0 questions detected</span>
+            <button class="link" id="clearBtn" type="button">Clear</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>Formatting options</h3>
+            <span class="pill">Customize</span>
+          </div>
+          <div class="options">
+            <label>
+              Input delimiter
+              <select id="delimiter">
+                <option value="newline">New line</option>
+                <option value="comma">Comma</option>
+                <option value="semicolon">Semicolon</option>
+              </select>
+            </label>
+            <label>
+              Numbering style
+              <select id="numbering">
+                <option value="arabic">1, 2, 3</option>
+                <option value="roman">I, II, III</option>
+                <option value="none">No numbering</option>
+              </select>
+            </label>
+            <label>
+              Prefix
+              <input id="prefix" type="text" placeholder="e.g., Q:" />
+            </label>
+            <label>
+              Suffix
+              <input id="suffix" type="text" placeholder="e.g., ?" />
+            </label>
+            <label class="checkbox">
+              <input id="trim" type="checkbox" checked />
+              Trim extra spaces
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>Formatted output</h3>
+            <span class="pill">Ready to copy</span>
+          </div>
+          <textarea
+            id="formattedOutput"
+            readonly
+            placeholder="Formatted questions appear here after you click Format."
+          ></textarea>
+          <div class="helper">
+            <span id="outputCount">0 questions formatted</span>
+            <span class="copy-hint">Tip: Click “Copy formatted questions”.</span>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>Built for quick quiz building, study guides, and LMS imports.</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
