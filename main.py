@@ -1,65 +1,116 @@
-import pandas as pd
-from fastapi import FastAPI, Depends
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from connector import get_db, init_db, DBTransaction
-from ai_engine import UnifiedFinancialAI
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from database import get_db, init_db, Account, Transaction
 
-app = FastAPI(title="Modular Financial AI Platform")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-ai_engine = UnifiedFinancialAI()
+app = FastAPI(title="ABC Banking Management System")
 
 @app.on_event("startup")
 def startup_event():
     init_db()
 
-class TransactionInput(BaseModel):
-    user_id: str
+# --- Pydantic Schemas ---
+class AccountCreate(BaseModel):
+    account_number: str
+    owner_name: str
+    initial_deposit: float = 0.0
+
+class TransactionRequest(BaseModel):
+    account_number: str
     amount: float
-    hour_of_day: int
-    day_of_week: int
 
-class CashFlowInput(BaseModel):
-    daily_balances: list[float]
+class TransferRequest(BaseModel):
+    sender_account_number: str
+    receiver_account_number: str
+    amount: float
 
-class GoalInput(BaseModel):
-    current_savings: float
-    target_amount: float
-    target_months: int
-    avg_monthly_surplus: float
+# --- API Endpoints ---
+@app.post("/api/accounts/create", summary="Create Account")
+def create_account(data: AccountCreate, db: Session = Depends(get_db)):
+    existing = db.query(Account).filter(Account.account_number == data.account_number).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Account number already exists.")
+    
+    new_account = Account(
+        account_number=data.account_number,
+        owner_name=data.owner_name,
+        balance=data.initial_deposit
+    )
+    db.add(new_account)
+    db.commit()
+    db.refresh(new_account)
+    
+    if data.initial_deposit > 0:
+        tx = Transaction(account_id=new_account.id, transaction_type="DEPOSIT", amount=data.initial_deposit)
+        db.add(tx)
+        db.commit()
+        
+    return {"message": "Account created successfully", "account_number": new_account.account_number, "balance": new_account.balance}
 
-@app.get("/", response_class=HTMLResponse)
-def serve_frontend():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
+@app.get("/api/accounts/{account_number}", summary="Get Account Details")
+def get_account(account_number: str, db: Session = Depends(get_db)):
+    account = db.query(Account).filter(Account.account_number == account_number).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found.")
+    return {
+        "account_number": account.account_number,
+        "owner_name": account.owner_name,
+        "balance": account.balance,
+        "created_at": account.created_at
+    }
 
-@app.post("/api/transactions/evaluate")
-def evaluate_tx(tx: TransactionInput, db: Session = Depends(get_db)):
-    db_tx = DBTransaction(user_id=tx.user_id, amount=tx.amount, hour_of_day=tx.hour_of_day, day_of_week=tx.day_of_week)
-    db.add(db_tx)
+@app.post("/api/transactions/deposit", summary="Deposit Funds")
+def deposit(req: TransactionRequest, db: Session = Depends(get_db)):
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than zero.")
+        
+    account = db.query(Account).filter(Account.account_number == req.account_number).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found.")
+        
+    account.balance += req.amount
+    db.add(Transaction(account_id=account.id, transaction_type="DEPOSIT", amount=req.amount))
     db.commit()
     
-    user_txs = db.query(DBTransaction).filter(DBTransaction.user_id == tx.user_id).all()
-    if len(user_txs) > 3:
-        df = pd.DataFrame([{"amount": t.amount, "hour_of_day": t.hour_of_day, "day_of_week": t.day_of_week} for t in user_txs])
-        ai_engine.train_behavioral_profile(df)
+    return {"message": "Deposit successful", "new_balance": account.balance}
+
+@app.post("/api/transactions/withdraw", summary="Withdraw Funds")
+def withdraw(req: TransactionRequest, db: Session = Depends(get_db)):
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than zero.")
         
-    return ai_engine.evaluate_transaction(tx.dict())
+    account = db.query(Account).filter(Account.account_number == req.account_number).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found.")
+        
+    if account.balance < req.amount:
+        raise HTTPException(status_code=400, detail="Insufficient funds.")
+        
+    account.balance -= req.amount
+    db.add(Transaction(account_id=account.id, transaction_type="WITHDRAW", amount=req.amount))
+    db.commit()
+    
+    return {"message": "Withdrawal successful", "new_balance": account.balance}
 
-@app.post("/api/cashflow/forecast")
-def forecast(data: CashFlowInput):
-    return ai_engine.forecast_cash_flow(data.daily_balances)
-
-@app.post("/api/goals/calculate")
-def goal_calc(goal: GoalInput):
-    return ai_engine.calculate_goal(goal.current_savings, goal.target_amount, goal.target_months, goal.avg_monthly_surplus)
+@app.post("/api/transactions/transfer", summary="Transfer Between Accounts")
+def transfer(req: TransferRequest, db: Session = Depends(get_db)):
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than zero.")
+        
+    sender = db.query(Account).filter(Account.account_number == req.sender_account_number).first()
+    receiver = db.query(Account).filter(Account.account_number == req.receiver_account_number).first()
+    
+    if not sender or not receiver:
+        raise HTTPException(status_code=404, detail="Sender or receiver account not found.")
+        
+    if sender.balance < req.amount:
+        raise HTTPException(status_code=400, detail="Insufficient funds in sender account.")
+        
+    sender.balance -= req.amount
+    receiver.balance += req.amount
+    
+    db.add(Transaction(account_id=sender.id, transaction_type="TRANSFER_OUT", amount=req.amount))
+    db.add(Transaction(account_id=receiver.id, transaction_type="TRANSFER_IN", amount=req.amount))
+    db.commit()
+    
+    return {"message": "Transfer successful", "sender_balance": sender.balance, "receiver_balance": receiver.balance}
